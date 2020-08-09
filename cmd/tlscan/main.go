@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"tlscan/pkg/tlscan"
+	"github.com/manuelbua/tlscan/pkg/tlscan"
 )
 
 func main() {
