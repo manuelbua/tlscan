@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -11,18 +12,29 @@ import (
 )
 
 func main() {
+	log.SetFlags(0)
+
 	o := tlscan.ParseOptions()
 
-	if !tlscan.HasStdin() {
-		println("No data at stdin (host,port)")
-		return
+	var scanner *bufio.Scanner
+
+	if o.HasStdin {
+		scanner = bufio.NewScanner(os.Stdin)
+	} else if o.HasTargetString {
+		scanner = bufio.NewScanner(strings.NewReader(o.Targets))
+	} else {
+		input, err := os.Open(o.TargetList)
+		if err != nil {
+			log.Fatalf("Could not open target file %s", o.TargetList)
+		}
+		scanner = bufio.NewScanner(input)
+		defer input.Close()
 	}
 
 	limiter := make(chan struct{}, o.Threads)
 	outputMutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 
-	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		in := scanner.Text()
 		if len(in) == 0 {
@@ -30,24 +42,28 @@ func main() {
 		}
 
 		s := strings.Split(in, ",")
-		host, port := s[0], s[1]
+		if len(s) >= 2 {
+			host, port := s[0], s[1]
 
-		wg.Add(1)
-		limiter <- struct{}{}
-		go func() {
-			defer wg.Done()
-			hasTls, err := tlscan.TlsConnect(host, port, o.Timeout)
-			if err == nil {
-				proto := "http"
-				if hasTls {
-					proto = "https"
+			wg.Add(1)
+			limiter <- struct{}{}
+			go func() {
+				defer wg.Done()
+				hasTls, err := tlscan.TlsConnect(host, port, o.Timeout)
+				if err == nil {
+					proto := "http"
+					if hasTls {
+						proto = "https"
+					}
+					outputMutex.Lock()
+					fmt.Printf("%s://%s:%s\n", proto, host, port)
+					outputMutex.Unlock()
 				}
-				outputMutex.Lock()
-				fmt.Printf("%s://%s:%s\n", proto, host, port)
-				outputMutex.Unlock()
-			}
-			<-limiter
-		}()
+				<-limiter
+			}()
+		} else {
+			log.Fatalf("Unsupported input format: %s", in)
+		}
 	}
 	wg.Wait()
 }
