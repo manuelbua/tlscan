@@ -9,10 +9,10 @@ import (
 type Options struct {
 	Timeout         float64 // Timeout is the number of seconds to wait for the handshake to complete
 	Threads         int     // Threads is the number of concurrent connections to make
-	HasStdin        bool    // HasStdin indicates if input is present at stdin
 	Targets         string  // Target is a single target
-	HasTargetString bool    // HasSingleTarget indicates if Target is valid
 	TargetList      string  // TargetList is the file with a list of targets
+	HasStdin        bool    // HasStdin indicates if input is present at stdin
+	HasTargetString bool    // HasSingleTarget indicates if Target is valid
 	HasTargetList   bool    // HasTargetList indicates if TargetList is valid
 }
 

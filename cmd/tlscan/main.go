@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	tlscan.ShowBanner()
 	log.SetFlags(0)
 
 	o := tlscan.ParseOptions()
