@@ -187,7 +187,7 @@ func (p *Progress) setupProgressbar(total int64, priority int) *mpb.Bar {
 		mpb.BarNoPop(),
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
-			decor.CountersNoUnit(color.BrightBlue(" %d/%d").String(), decor.WCSyncSpace),
+			decor.CountersNoUnit(color.BrightBlue("%d/%d").String(), decor.WCSyncSpace),
 			decor.NewPercentage(color.Bold("%d").String(), decor.WCSyncSpace),
 		),
 		mpb.AppendDecorators(
