@@ -3,7 +3,6 @@ package runner
 import (
 	"fmt"
 	"os"
-	"strings"
 )
 
 const banner = `
@@ -20,17 +19,6 @@ Input is <host,port> or <ip,host,port>.
 
 `
 
-const unversioned = "(unversioned)"
-
-var version = unversioned
-
 func ShowBanner() {
 	fmt.Fprintf(os.Stderr, banner, GetVersion())
-}
-
-func GetVersion() string {
-	if len(strings.TrimSpace(version)) == 0 {
-		return unversioned
-	}
-	return version
 }
