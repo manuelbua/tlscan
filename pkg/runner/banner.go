@@ -1,4 +1,4 @@
-package tlscan
+package runner
 
 import (
 	"fmt"
