@@ -198,13 +198,6 @@ func (p *Progress) setupProgressbar(total int64, priority int) *mpb.Bar {
 	)
 }
 
-func pluralize(count int64, singular, plural string) string {
-	if count > 1 {
-		return plural
-	}
-	return singular
-}
-
 func (p *Progress) drainStringBuilderTo(builder *strings.Builder, writer io.Writer) {
 	if builder.Len() > 0 {
 		fmt.Fprint(writer, builder.String())
