@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	errNoHttp = errors.New("not an HTTP server")
+	errNoHttp      = errors.New("not an HTTP server")
 	errCantConnect = errors.New("could not connect")
 )
 

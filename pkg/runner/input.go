@@ -8,7 +8,7 @@ import (
 )
 
 type Input struct {
-	Data string
+	Data  string
 	Count int64
 }
 
@@ -37,16 +37,20 @@ func NewInput(o *Options) *Input {
 	sb := strings.Builder{}
 	i.Count = 0
 	for scanner.Scan() {
-		url := scanner.Text()
+		line := scanner.Text()
+
 		// skip empty lines
-		if len(url) == 0 {
+		if len(line) == 0 {
 			continue
 		}
+
+		var host, _ = ParseLine(line)
+
 		// deduplication
-		if _, ok := usedInput[url]; !ok {
-			usedInput[url] = true
+		if _, ok := usedInput[host]; !ok {
+			usedInput[host] = true
 			i.Count++
-			sb.WriteString(url)
+			sb.WriteString(line)
 			sb.WriteString("\n")
 		} else {
 			dupeCount++

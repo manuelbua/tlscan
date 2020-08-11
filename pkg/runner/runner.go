@@ -18,7 +18,7 @@ type Runner struct {
 	progress progress.IProgress
 
 	// output coloring
-	colorizer   aurora.Aurora
+	colorizer aurora.Aurora
 	//decolorizer *regexp.Regexp
 }
 
@@ -64,19 +64,7 @@ func (r *Runner) Run() {
 
 	for scanner.Scan() {
 		in := scanner.Text()
-
-		s := strings.Split(in, ",")
-		var host, port string
-
-		switch len(s) {
-		case 2:
-			host, port = s[0], s[1]
-		case 3:
-			host, port = s[1], s[2]
-		default:
-			log.Printf("Unsupported input format: %s", in)
-			continue
-		}
+		var host, port = ParseLine(in)
 
 		wg.Add(1)
 		limiter <- struct{}{}
@@ -102,4 +90,18 @@ func (r *Runner) Run() {
 	}
 	wg.Wait()
 	p.Wait()
+}
+
+func ParseLine(line string) (host, port string) {
+	s := strings.Split(line, ",")
+
+	switch len(s) {
+	case 2:
+		host, port = s[0], s[1]
+	case 3:
+		host, port = s[1], s[2]
+	default:
+		log.Printf("Unsupported input format: %s", line)
+	}
+	return host, port
 }

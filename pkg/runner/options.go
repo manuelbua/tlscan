@@ -11,13 +11,13 @@ type Options struct {
 	Threads         int     // Threads is the number of concurrent connections to make
 	Targets         string  // Targets is a single target
 	TargetList      string  // TargetList is the file with a list of targets
-	OnlyTls 		bool    // OnlyTls indicates to only produce output for TLS-enabled servers
-	OnlyPlain  		bool  	// OnlyPlain indicates to only produce output for non-TLS-enabled servers
+	OnlyTls         bool    // OnlyTls indicates to only produce output for TLS-enabled servers
+	OnlyPlain       bool    // OnlyPlain indicates to only produce output for non-TLS-enabled servers
 	HasStdin        bool    // HasStdin indicates if input is present at stdin
 	HasTargetString bool    // HasTargetString indicates if Target is valid
 	HasTargetList   bool    // HasTargetList indicates if TargetList is valid
-	NoColor 		bool 	// NoColor indicates to not colorize output
-	NoProgressBar   bool 	// NoProgressBar indicates to not use a progressbar
+	NoColor         bool    // NoColor indicates to not colorize output
+	NoProgressBar   bool    // NoProgressBar indicates to not use a progressbar
 }
 
 func ParseOptions() *Options {
