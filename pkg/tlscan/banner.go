@@ -15,6 +15,7 @@ _/  |_|  |   ______ ____ _____    ____
 %40s
 
 Probes HTTP servers for TLS support.
+Input is <host,port> or <ip,host,port>.
 
 `
 

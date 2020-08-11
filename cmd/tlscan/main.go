@@ -43,15 +43,27 @@ func main() {
 		}
 
 		s := strings.Split(in, ",")
-		if len(s) >= 2 {
-			host, port := s[0], s[1]
+		var host, port string
 
-			wg.Add(1)
-			limiter <- struct{}{}
-			go func() {
-				defer wg.Done()
-				hasTls, err := tlscan.TlsConnect(host, port, o.Timeout)
-				if err == nil {
+		switch len(s) {
+		case 2:
+			host, port = s[0], s[1]
+		case 3:
+			host, port = s[1], s[2]
+		default:
+			log.Printf("Unsupported input format: %s", in)
+			continue
+		}
+
+		wg.Add(1)
+		limiter <- struct{}{}
+		go func() {
+			defer wg.Done()
+			hasTls, err := tlscan.TlsConnect(host, port, o.Timeout)
+			if err == nil {
+				if (!o.OnlyPlain && !o.OnlyTls) ||
+					(o.OnlyTls && hasTls) ||
+					(o.OnlyPlain && !hasTls) {
 					proto := "http"
 					if hasTls {
 						proto = "https"
@@ -60,11 +72,9 @@ func main() {
 					fmt.Printf("%s://%s:%s\n", proto, host, port)
 					outputMutex.Unlock()
 				}
-				<-limiter
-			}()
-		} else {
-			log.Fatalf("Unsupported input format: %s", in)
-		}
+			}
+			<-limiter
+		}()
 	}
 	wg.Wait()
 }
