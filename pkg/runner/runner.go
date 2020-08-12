@@ -64,7 +64,7 @@ func (r *Runner) Run() {
 
 	for scanner.Scan() {
 		in := scanner.Text()
-		var host, port = ParseLine(in)
+		var host, port, _ = ParseLine(in)
 
 		wg.Add(1)
 		limiter <- struct{}{}
@@ -92,7 +92,7 @@ func (r *Runner) Run() {
 	p.Wait()
 }
 
-func ParseLine(line string) (host, port string) {
+func ParseLine(line string) (host, port, hostport string) {
 	s := strings.Split(line, ",")
 
 	switch len(s) {
@@ -103,5 +103,5 @@ func ParseLine(line string) (host, port string) {
 	default:
 		log.Printf("Unsupported input format: %s", line)
 	}
-	return host, port
+	return host, port, fmt.Sprintf("%s:%s", host, port)
 }

@@ -44,11 +44,11 @@ func NewInput(o *Options) *Input {
 			continue
 		}
 
-		var host, _ = ParseLine(line)
+		var _, _, hostport = ParseLine(line)
 
 		// deduplication
-		if _, ok := usedInput[host]; !ok {
-			usedInput[host] = true
+		if _, ok := usedInput[hostport]; !ok {
+			usedInput[hostport] = true
 			i.Count++
 			sb.WriteString(line)
 			sb.WriteString("\n")
