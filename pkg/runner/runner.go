@@ -59,6 +59,7 @@ func (r *Runner) Run() {
 	outputMutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 
+	httpScanner := http.New(opts.Timeout)
 	p := r.progress
 	p.InitProgressbar(input.Count)
 
@@ -70,7 +71,7 @@ func (r *Runner) Run() {
 		limiter <- struct{}{}
 		go func() {
 			defer wg.Done()
-			hasTls, err := http.TlsConnect(host, port, opts.Timeout)
+			hasTls, err := httpScanner.Scan(host, port)
 			if err == nil {
 				if (!opts.OnlyPlain && !opts.OnlyTls) ||
 					(opts.OnlyTls && hasTls) ||
