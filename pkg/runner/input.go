@@ -2,6 +2,7 @@ package runner
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -44,11 +45,11 @@ func NewInput(o *Options) *Input {
 			continue
 		}
 
-		var _, _, hostport = ParseLine(line)
+		var _, _, _, ipHostPort = ParseLine(line)
 
 		// deduplication
-		if _, ok := usedInput[hostport]; !ok {
-			usedInput[hostport] = true
+		if _, ok := usedInput[ipHostPort]; !ok {
+			usedInput[ipHostPort] = true
 			i.Count++
 			sb.WriteString(line)
 			sb.WriteString("\n")
@@ -67,4 +68,20 @@ func NewInput(o *Options) *Input {
 	}
 
 	return i
+}
+
+func ParseLine(line string) (ip, host, port, hostport string) {
+	s := strings.Split(line, ",")
+	ip = ""
+
+	switch len(s) {
+	case 2:
+		host, port = s[0], s[1]
+	case 3:
+		ip, host, port = s[0], s[1], s[2]
+	default:
+		log.Printf("Unsupported input format: %s", line)
+	}
+
+	return ip, host, port, fmt.Sprintf("%s:%s:%s", ip, host, port)
 }

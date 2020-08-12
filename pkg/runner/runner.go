@@ -65,13 +65,13 @@ func (r *Runner) Run() {
 
 	for scanner.Scan() {
 		in := scanner.Text()
-		var host, port, _ = ParseLine(in)
+		var ip, host, port, _ = ParseLine(in)
 
 		wg.Add(1)
 		limiter <- struct{}{}
 		go func() {
 			defer wg.Done()
-			hasTls, err := httpScanner.Scan(host, port)
+			hasTls, err := httpScanner.Scan(ip, host, port)
 			if err == nil {
 				if (!opts.OnlyPlain && !opts.OnlyTls) ||
 					(opts.OnlyTls && hasTls) ||
@@ -91,18 +91,4 @@ func (r *Runner) Run() {
 	}
 	wg.Wait()
 	p.Wait()
-}
-
-func ParseLine(line string) (host, port, hostport string) {
-	s := strings.Split(line, ",")
-
-	switch len(s) {
-	case 2:
-		host, port = s[0], s[1]
-	case 3:
-		host, port = s[1], s[2]
-	default:
-		log.Printf("Unsupported input format: %s", line)
-	}
-	return host, port, fmt.Sprintf("%s:%s", host, port)
 }

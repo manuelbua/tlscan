@@ -12,41 +12,55 @@ import (
 )
 
 var (
-	errNoHttp      = errors.New("not an HTTP server")
+	errNoHttp = errors.New("not an HTTP server")
 )
 
 type Scanner struct {
-	client *http.Client
+	timeout time.Duration
 }
 
-func New(timeoutSeconds float64) Scanner {
-	timeout := time.Duration(timeoutSeconds*1000) * time.Millisecond
-
+func (s *Scanner) newClient(sni string) *http.Client {
 	var tr = &http.Transport{
 		MaxIdleConns:      30,
 		IdleConnTimeout:   time.Second,
 		DisableKeepAlives: true,
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true, ServerName: sni},
 		DialContext: (&net.Dialer{
-			Timeout:   timeout,
+			Timeout:   s.timeout,
 			KeepAlive: time.Second,
 		}).DialContext,
 	}
 
-	client := &http.Client{
+	return &http.Client{
 		Transport: tr,
-		Timeout:   timeout,
+		Timeout:   s.timeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-	return Scanner{client: client}
 }
 
-func (h *Scanner) Scan(host, port string) (bool, error) {
-	if isListening(h.client, fmt.Sprintf("https://%s:%s", host, port)) {
+func New(timeoutSeconds float64) Scanner {
+	timeout := time.Duration(timeoutSeconds*1000) * time.Millisecond
+	return Scanner{timeout: timeout}
+}
+
+func (s *Scanner) Scan(ip, host, port string) (bool, error) {
+	var client *http.Client
+	var url, urls string
+	if len(ip) > 0 {
+		client = s.newClient(host)
+		url = fmt.Sprintf("http://%s:%s", ip, port)
+		urls = fmt.Sprintf("https://%s:%s", ip, port)
+	} else {
+		client = s.newClient("")
+		url = fmt.Sprintf("http://%s:%s", host, port)
+		urls = fmt.Sprintf("https://%s:%s", host, port)
+	}
+
+	if isListening(client, urls) {
 		return true, nil
-	} else if isListening(h.client, fmt.Sprintf("http://%s:%s", host, port)) {
+	} else if isListening(client, url) {
 		return false, nil
 	}
 	return false, errNoHttp
