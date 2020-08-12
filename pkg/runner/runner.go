@@ -59,7 +59,7 @@ func (r *Runner) Run() {
 	outputMutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 
-	httpScanner := http.New(opts.Timeout)
+	httpScanner := http.NewScanner(opts.Timeout)
 	p := r.progress
 	p.InitProgressbar(input.Count)
 

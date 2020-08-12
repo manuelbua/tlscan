@@ -12,68 +12,80 @@ import (
 )
 
 var (
-	errNoHttp = errors.New("not an HTTP server")
+	errRequestError = errors.New("request error")
 )
 
 type Scanner struct {
-	timeout time.Duration
+	client    *http.Client
+	userAgent string
 }
 
-func (s *Scanner) newClient(sni string) *http.Client {
+func NewScanner(timeoutSeconds float64) Scanner {
+	timeout := time.Duration(timeoutSeconds*1000) * time.Millisecond
+
 	var tr = &http.Transport{
 		MaxIdleConns:      30,
 		IdleConnTimeout:   time.Second,
 		DisableKeepAlives: true,
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true, ServerName: sni},
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 		DialContext: (&net.Dialer{
-			Timeout:   s.timeout,
+			Timeout:   timeout,
 			KeepAlive: time.Second,
 		}).DialContext,
 	}
 
-	return &http.Client{
+	var client = &http.Client{
 		Transport: tr,
-		Timeout:   s.timeout,
+		Timeout:   timeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-}
 
-func New(timeoutSeconds float64) Scanner {
-	timeout := time.Duration(timeoutSeconds*1000) * time.Millisecond
-	return Scanner{timeout: timeout}
+	return Scanner{
+		client:    client,
+		userAgent: fmt.Sprintf("tlscan/dudez"),
+	}
 }
 
 func (s *Scanner) Scan(ip, host, port string) (bool, error) {
-	var client *http.Client
 	var url, urls string
+	var hostname, hostHdr string
+
 	if len(ip) > 0 {
-		client = s.newClient(host)
-		url = fmt.Sprintf("http://%s:%s", ip, port)
-		urls = fmt.Sprintf("https://%s:%s", ip, port)
+		hostname = ip
+		hostHdr = host
+		if port != "80" && port != "443" {
+			hostHdr += ":" + port
+		}
 	} else {
-		client = s.newClient("")
-		url = fmt.Sprintf("http://%s:%s", host, port)
-		urls = fmt.Sprintf("https://%s:%s", host, port)
+		hostname = host
 	}
 
-	if isListening(client, urls) {
+	url = fmt.Sprintf("http://%s:%s", hostname, port)
+	urls = fmt.Sprintf("https://%s:%s", hostname, port)
+
+	if isListening(s.client, s.userAgent, urls, hostHdr) {
 		return true, nil
-	} else if isListening(client, url) {
+	} else if isListening(s.client, s.userAgent, url, hostHdr) {
 		return false, nil
 	}
-	return false, errNoHttp
+	return false, errRequestError
 }
 
-func isListening(client *http.Client, url string) bool {
+func isListening(client *http.Client, ua, url, hostHdr string) bool {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return false
 	}
 
+	if len(hostHdr) > 0 {
+		req.Host = hostHdr
+	}
+
 	req.Header.Add("Connection", "close")
 	req.Close = true
+	req.Header.Set("User-Agent", ua)
 
 	resp, err := client.Do(req)
 	if resp != nil {
