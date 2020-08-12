@@ -49,46 +49,54 @@ func New() (*Runner, error) {
 
 func (r *Runner) Run() {
 	input := r.input
-	opts := r.options
+	if input.Count == 0 {
+		log.Println("No input found.")
+	} else {
+		opts := r.options
 
-	log.Printf("Processing %s hosts.", r.colorizer.Bold(input.Count).String())
+		log.Printf("Processing %s hosts.", r.colorizer.Bold(input.Count).String())
 
-	scanner := bufio.NewScanner(strings.NewReader(input.Data))
+		scanner := bufio.NewScanner(strings.NewReader(input.Data))
 
-	limiter := make(chan struct{}, opts.Threads)
-	outputMutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
+		limiter := make(chan struct{}, opts.Threads)
+		outputMutex := sync.Mutex{}
+		wg := sync.WaitGroup{}
 
-	httpScanner := http.NewScanner(opts.Timeout)
-	p := r.progress
-	p.InitProgressbar(input.Count)
+		httpScanner := http.NewScanner(opts.Timeout)
+		p := r.progress
+		p.InitProgressbar(input.Count)
 
-	for scanner.Scan() {
-		in := scanner.Text()
-		var ip, host, port, _ = ParseLine(in)
+		for scanner.Scan() {
+			in := scanner.Text()
+			var ip, host, port, _, err = ParseLine(in)
 
-		wg.Add(1)
-		limiter <- struct{}{}
-		go func() {
-			defer wg.Done()
-			hasTls, err := httpScanner.Scan(ip, host, port)
-			if err == nil {
-				if (!opts.OnlyPlain && !opts.OnlyTls) ||
-					(opts.OnlyTls && hasTls) ||
-					(opts.OnlyPlain && !hasTls) {
-					proto := "http"
-					if hasTls {
-						proto = "https"
+			if err != nil {
+				log.Println(err)
+			} else {
+				wg.Add(1)
+				limiter <- struct{}{}
+				go func() {
+					defer wg.Done()
+					hasTls, err := httpScanner.Scan(ip, host, port)
+					if err == nil {
+						if (!opts.OnlyPlain && !opts.OnlyTls) ||
+							(opts.OnlyTls && hasTls) ||
+							(opts.OnlyPlain && !hasTls) {
+							proto := "http"
+							if hasTls {
+								proto = "https"
+							}
+							outputMutex.Lock()
+							fmt.Printf("%s://%s:%s\n", proto, host, port)
+							outputMutex.Unlock()
+						}
 					}
-					outputMutex.Lock()
-					fmt.Printf("%s://%s:%s\n", proto, host, port)
-					outputMutex.Unlock()
-				}
+					p.Update()
+					<-limiter
+				}()
 			}
-			p.Update()
-			<-limiter
-		}()
+		}
+		wg.Wait()
+		p.Wait()
 	}
-	wg.Wait()
-	p.Wait()
 }
