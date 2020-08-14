@@ -10,7 +10,7 @@ import (
 )
 
 type Input struct {
-	Data  string
+	Data  [][3]string
 	Count int64
 }
 
@@ -46,7 +46,7 @@ func NewInput(o *Options) *Input {
 			continue
 		}
 
-		var _, _, _, ipHostPort, err = ParseLine(line)
+		var ip, host, port, ipHostPort, err = parseLine(line)
 		if err != nil {
 			log.Println(err)
 		} else {
@@ -54,6 +54,7 @@ func NewInput(o *Options) *Input {
 			if _, ok := usedInput[ipHostPort]; !ok {
 				usedInput[ipHostPort] = true
 				i.Count++
+				i.Data = append(i.Data, [3]string{ip, host, port})
 				sb.WriteString(line)
 				sb.WriteString("\n")
 			} else {
@@ -66,7 +67,6 @@ func NewInput(o *Options) *Input {
 		log.Fatalf("Couldn't close input file %s", o.TargetList)
 	}
 
-	i.Data = sb.String()
 	if dupeCount > 0 {
 		log.Printf("Supplied input was automatically deduplicated (%d removed).", dupeCount)
 	}
@@ -74,7 +74,7 @@ func NewInput(o *Options) *Input {
 	return i
 }
 
-func ParseLine(line string) (ip, host, port, hostPort string, err error) {
+func parseLine(line string) (ip, host, port, hostPort string, err error) {
 	s := strings.Split(line, ",")
 	ip = ""
 

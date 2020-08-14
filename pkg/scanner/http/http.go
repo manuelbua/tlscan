@@ -39,6 +39,8 @@ func (s *Scanner) newClient(sni string) *http.Client {
 		tlsConfig.ServerName = sni
 	}
 
+	// DialTLSContext could be an alternative
+	// https://github.com/abursavich/dynamictls/blob/5d11b97955cdd8a1cb11f21e4012a26600cfa517/dynamictls.go#L270
 	var tr = &http.Transport{
 		MaxIdleConns:      30,
 		IdleConnTimeout:   time.Second,

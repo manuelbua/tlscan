@@ -1,13 +1,11 @@
 package runner
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/logrusorgru/aurora"
 	"github.com/manuelbua/tlscan/pkg/progress"
 	"github.com/manuelbua/tlscan/pkg/scanner/http"
 	"log"
-	"strings"
 	"sync"
 )
 
@@ -56,8 +54,6 @@ func (r *Runner) Run() {
 
 		log.Printf("Processing %s hosts.", r.colorizer.Bold(input.Count).String())
 
-		scanner := bufio.NewScanner(strings.NewReader(input.Data))
-
 		limiter := make(chan struct{}, opts.Threads)
 		outputMutex := sync.Mutex{}
 		wg := sync.WaitGroup{}
@@ -66,35 +62,30 @@ func (r *Runner) Run() {
 		p := r.progress
 		p.InitProgressbar(input.Count)
 
-		for scanner.Scan() {
-			in := scanner.Text()
-			var ip, host, port, _, err = ParseLine(in)
+		for _, in := range input.Data {
+			var ip, host, port = in[0], in[1], in[2]
 
-			if err != nil {
-				log.Println(err)
-			} else {
-				wg.Add(1)
-				limiter <- struct{}{}
-				go func() {
-					defer wg.Done()
-					hasTls, err := httpScanner.Scan(ip, host, port)
-					if err == nil {
-						if (!opts.OnlyPlain && !opts.OnlyTls) ||
-							(opts.OnlyTls && hasTls) ||
-							(opts.OnlyPlain && !hasTls) {
-							proto := "http"
-							if hasTls {
-								proto = "https"
-							}
-							outputMutex.Lock()
-							fmt.Printf("%s://%s:%s\n", proto, host, port)
-							outputMutex.Unlock()
+			wg.Add(1)
+			limiter <- struct{}{}
+			go func() {
+				defer wg.Done()
+				hasTls, err := httpScanner.Scan(ip, host, port)
+				if err == nil {
+					if (!opts.OnlyPlain && !opts.OnlyTls) ||
+						(opts.OnlyTls && hasTls) ||
+						(opts.OnlyPlain && !hasTls) {
+						proto := "http"
+						if hasTls {
+							proto = "https"
 						}
+						outputMutex.Lock()
+						fmt.Printf("%s://%s:%s\n", proto, host, port)
+						outputMutex.Unlock()
 					}
-					p.Update()
-					<-limiter
-				}()
-			}
+				}
+				p.Update()
+				<-limiter
+			}()
 		}
 		wg.Wait()
 		p.Wait()
