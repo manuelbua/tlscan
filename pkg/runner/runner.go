@@ -54,6 +54,7 @@ func (r *Runner) Run() {
 
 		log.Printf("Processing %s hosts.", r.colorizer.Bold(input.Count).String())
 
+		uniqueOutput := make(map[string]bool)
 		limiter := make(chan struct{}, opts.Threads)
 		outputMutex := sync.Mutex{}
 		wg := sync.WaitGroup{}
@@ -78,8 +79,13 @@ func (r *Runner) Run() {
 						if hasTls {
 							proto = "https"
 						}
+
 						outputMutex.Lock()
-						fmt.Printf("%s://%s:%s\n", proto, host, port)
+						out := fmt.Sprintf("%s://%s:%s\n", proto, host, port)
+						if _, ok := uniqueOutput[out]; !ok {
+							uniqueOutput[out] = true
+							fmt.Print(out)
+						}
 						outputMutex.Unlock()
 					}
 				}
