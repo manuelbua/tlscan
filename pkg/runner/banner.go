@@ -2,6 +2,7 @@ package runner
 
 import (
 	"fmt"
+	"github.com/manuelbua/go-version"
 	"os"
 )
 
@@ -20,5 +21,5 @@ Input is <host,port> or <ip,host,port>.
 `
 
 func ShowBanner() {
-	fmt.Fprintf(os.Stderr, banner, GetVersion())
+	fmt.Fprintf(os.Stderr, banner, version.GetVersion()+"/@dudez")
 }

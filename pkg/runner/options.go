@@ -2,6 +2,8 @@ package runner
 
 import (
 	"flag"
+	"fmt"
+	"github.com/manuelbua/go-version"
 	"log"
 	"os"
 )
@@ -18,11 +20,10 @@ type Options struct {
 	HasTargetList   bool    // HasTargetList indicates if TargetList is valid
 	NoColor         bool    // NoColor indicates to not colorize output
 	NoProgressBar   bool    // NoProgressBar indicates to not use a progressbar
+	ShowVersion     bool    // Shows version and exit
 }
 
 func ParseOptions() *Options {
-	ShowBanner()
-
 	options := &Options{}
 
 	flag.StringVar(&options.Targets, "t", "", "Specify a single containing one or more targets, newline separated")
@@ -33,8 +34,16 @@ func ParseOptions() *Options {
 	flag.BoolVar(&options.OnlyPlain, "http", false, "Output only non-TLS-enabled servers")
 	flag.BoolVar(&options.NoColor, "nC", false, "Do not colorize output")
 	flag.BoolVar(&options.NoProgressBar, "nobar", false, "Do not use a progressbar")
+	flag.BoolVar(&options.ShowVersion, "v", false, "Shows version and exit")
 
 	flag.Parse()
+
+	if options.ShowVersion {
+		fmt.Println(version.GetVersionLong())
+		os.Exit(0)
+	}
+
+	ShowBanner()
 
 	if hasStdin() {
 		options.HasStdin = true
