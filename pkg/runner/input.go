@@ -36,7 +36,6 @@ func NewInput(o *Options) *Input {
 	// Sanitize input, deduplicate and precompute total number of targets
 	var usedInput = make(map[string]bool)
 	dupeCount := 0
-	sb := strings.Builder{}
 	i.Count = 0
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -55,8 +54,6 @@ func NewInput(o *Options) *Input {
 				usedInput[ipHostPort] = true
 				i.Count++
 				i.Data = append(i.Data, [3]string{ip, host, port})
-				sb.WriteString(line)
-				sb.WriteString("\n")
 			} else {
 				dupeCount++
 			}
