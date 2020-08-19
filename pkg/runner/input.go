@@ -10,21 +10,60 @@ import (
 )
 
 type Input struct {
-	Data  [][3]string
-	Count int64
+	Count     int64
+	DupeCount int
+
+	src                        *os.File
+	scanner                    *bufio.Scanner
+	scanned                    string
+	ip, host, port, ipHostPort string
+	usedInput                  map[string]bool
 }
 
 func NewInput(o *Options) *Input {
-	i := &Input{}
+	scanner, input := newScanner(o)
 
-	var scanner *bufio.Scanner
-	var input *os.File
+	i := &Input{
+		scanner:   scanner,
+		src:       input,
+		Count:     0,
+		DupeCount: 0,
+		usedInput: make(map[string]bool),
+	}
+
+	if !o.HasStdin {
+		// precompute totals
+		for i.Scan() {
+			i.Count++
+		}
+
+		if i.DupeCount > 0 {
+			log.Printf("Supplied input was automatically deduplicated (%d removed).", i.DupeCount)
+		}
+
+		if o.HasTargetList {
+			_, err := input.Seek(0, 0)
+			if err != nil {
+				log.Fatalf("Couldn't seek input")
+			}
+		}
+		i.scanner, i.src = newScanner(o)
+		i.usedInput = make(map[string]bool)
+	} else {
+		i.Count, i.DupeCount = -1, -1
+	}
+
+	return i
+}
+
+func newScanner(o *Options) (scanner *bufio.Scanner, input *os.File) {
 	var err error
+	input = nil
 
 	if o.HasStdin {
 		scanner = bufio.NewScanner(os.Stdin)
 	} else if o.HasTargetString {
-		scanner = bufio.NewScanner(strings.NewReader(o.Targets))
+		scanner = bufio.NewScanner(strings.NewReader(o.Target))
 	} else {
 		input, err = os.Open(o.TargetList)
 		if err != nil {
@@ -32,43 +71,54 @@ func NewInput(o *Options) *Input {
 		}
 		scanner = bufio.NewScanner(input)
 	}
+	return scanner, input
+}
 
-	// Sanitize input, deduplicate and precompute total number of targets
-	var usedInput = make(map[string]bool)
-	dupeCount := 0
-	i.Count = 0
-	for scanner.Scan() {
-		line := scanner.Text()
+func (i *Input) Begin() bool {
+	return i.Count != 0
+}
 
-		// skip empty lines
+func (i *Input) Scan() bool {
+	var err error
+
+	for {
+		scanned := i.scanner.Scan()
+		if !scanned {
+			return false
+		}
+
+		line := i.scanner.Text()
 		if len(line) == 0 {
 			continue
 		}
 
-		var ip, host, port, ipHostPort, err = parseLine(line)
+		i.ip, i.host, i.port, i.ipHostPort, err = parseLine(line)
 		if err != nil {
 			log.Println(err)
-		} else {
-			// deduplication
-			if _, ok := usedInput[ipHostPort]; !ok {
-				usedInput[ipHostPort] = true
-				i.Count++
-				i.Data = append(i.Data, [3]string{ip, host, port})
-			} else {
-				dupeCount++
-			}
+			continue
+		}
+
+		if _, dupe := i.usedInput[i.ipHostPort]; dupe {
+			i.DupeCount++
+			continue
+		}
+
+		i.usedInput[i.ipHostPort] = true
+		return true
+	}
+}
+
+func (i *Input) Data() (ip, host, port, ipHostPort string) {
+	return i.ip, i.host, i.port, i.ipHostPort
+}
+
+func (i *Input) End() {
+	if i.src != nil {
+		err := i.src.Close()
+		if err != nil {
+			log.Fatal("Couldn't close input file")
 		}
 	}
-
-	if input != nil && input.Close() != nil {
-		log.Fatalf("Couldn't close input file %s", o.TargetList)
-	}
-
-	if dupeCount > 0 {
-		log.Printf("Supplied input was automatically deduplicated (%d removed).", dupeCount)
-	}
-
-	return i
 }
 
 func parseLine(line string) (ip, host, port, hostPort string, err error) {

@@ -40,19 +40,19 @@ func New() (*Runner, error) {
 	//}
 
 	// progress tracking
-	runner.progress = progress.NewProgress(opts.NoColor, !opts.NoProgressBar)
+	runner.progress = progress.NewProgress(opts.NoColor, !opts.NoProgressBar && !opts.HasStdin)
 
 	return runner, nil
 }
 
 func (r *Runner) Run() {
 	input := r.input
-	if input.Count == 0 {
-		log.Println("No input found.")
-	} else {
-		opts := r.options
+	opts := r.options
 
-		log.Printf("Processing %s hosts.", r.colorizer.Bold(input.Count).String())
+	if input.Begin() {
+		if !opts.HasStdin {
+			log.Printf("Processing %s hosts.", r.colorizer.Bold(input.Count).String())
+		}
 
 		uniqueOutput := make(map[string]bool)
 		limiter := make(chan struct{}, opts.Threads)
@@ -60,11 +60,12 @@ func (r *Runner) Run() {
 		wg := sync.WaitGroup{}
 
 		httpScanner := http.NewScanner(opts.Timeout)
+
 		p := r.progress
 		p.InitProgressbar(input.Count)
 
-		for _, in := range input.Data {
-			var ip, host, port = in[0], in[1], in[2]
+		for input.Scan() {
+			var ip, host, port, _ = input.Data()
 
 			wg.Add(1)
 			limiter <- struct{}{}
@@ -95,5 +96,9 @@ func (r *Runner) Run() {
 		}
 		wg.Wait()
 		p.Wait()
+
+		input.End()
+	} else {
+		log.Println("No input found.")
 	}
 }

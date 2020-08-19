@@ -11,7 +11,7 @@ import (
 type Options struct {
 	Timeout         float64 // Timeout is the number of seconds to wait for the handshake to complete
 	Threads         int     // Threads is the number of concurrent connections to make
-	Targets         string  // Targets is a single target
+	Target          string  // Target represents a single target
 	TargetList      string  // TargetList is the file with a list of targets
 	OnlyTls         bool    // OnlyTls indicates to only produce output for TLS-enabled servers
 	OnlyPlain       bool    // OnlyPlain indicates to only produce output for non-TLS-enabled servers
@@ -26,7 +26,7 @@ type Options struct {
 func ParseOptions() *Options {
 	options := &Options{}
 
-	flag.StringVar(&options.Targets, "t", "", "Specify a single containing one or more targets, newline separated")
+	flag.StringVar(&options.Target, "t", "", "Specify a single target")
 	flag.StringVar(&options.TargetList, "tL", "", "Specify a file with a list of targets, one per line")
 	flag.Float64Var(&options.Timeout, "timeout", 10, "Seconds to wait for the handshake to complete")
 	flag.IntVar(&options.Threads, "c", 20, "Number of concurrent connection to make")
@@ -47,7 +47,7 @@ func ParseOptions() *Options {
 
 	if hasStdin() {
 		options.HasStdin = true
-	} else if len(options.Targets) > 0 {
+	} else if len(options.Target) > 0 {
 		options.HasTargetString = true
 	} else {
 		if len(options.TargetList) > 0 {
