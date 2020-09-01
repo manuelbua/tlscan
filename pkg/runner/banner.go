@@ -15,8 +15,11 @@ _/  |_|  |   ______ ____ _____    ____
                 \/     \/     \/     \/
 %40s
 
-Probes HTTP servers for TLS support.
-Input is <host,port> or <ip,host,port>.
+Probe targets at the specified port for
+HTTPS/HTTP support and print an URL if
+a connection can be established.
+
+Input format is "host,port" or "ip,host,port".
 
 `
 

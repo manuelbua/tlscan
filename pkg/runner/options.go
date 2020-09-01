@@ -13,6 +13,7 @@ type Options struct {
 	Threads         int     // Threads is the number of concurrent connections to make
 	Target          string  // Target represents a single target
 	TargetList      string  // TargetList is the file with a list of targets
+	UserAgent       string  // UserAgent indicates the user agent to use
 	OnlyTls         bool    // OnlyTls indicates to only produce output for TLS-enabled servers
 	OnlyPlain       bool    // OnlyPlain indicates to only produce output for non-TLS-enabled servers
 	HasStdin        bool    // HasStdin indicates if input is present at stdin
@@ -26,8 +27,9 @@ type Options struct {
 func ParseOptions() *Options {
 	options := &Options{}
 
-	flag.StringVar(&options.Target, "t", "", "Specify a single target")
-	flag.StringVar(&options.TargetList, "tL", "", "Specify a file with a list of targets, one per line")
+	flag.StringVar(&options.Target, "t", "", "Specify a single target (stdin has precedence)")
+	flag.StringVar(&options.TargetList, "tL", "", "Specify a file with a list of targets, one per line (stdin has precedence)")
+	flag.StringVar(&options.UserAgent, "ua", "tlscan (https://github.com/manuelbua/tlscan)", "Specify a custom User-Agent")
 	flag.Float64Var(&options.Timeout, "timeout", 10, "Seconds to wait for the handshake to complete")
 	flag.IntVar(&options.Threads, "c", 20, "Number of concurrent connection to make")
 	flag.BoolVar(&options.OnlyTls, "https", false, "Output only TLS-enabled servers")

@@ -20,11 +20,39 @@ type Scanner struct {
 	userAgent string
 }
 
-func NewScanner(timeoutSeconds float64) Scanner {
+func NewScanner(timeoutSeconds float64, userAgent string) Scanner {
 	return Scanner{
 		timeOut:   time.Duration(timeoutSeconds*1000) * time.Millisecond,
-		userAgent: fmt.Sprintf("tlscan/dudez"),
+		userAgent: userAgent,
 	}
+}
+
+func (s *Scanner) Scan(ip, host, port string) (bool, error) {
+	var url, urls string
+	var hostname, hostHdr, sni string
+
+	if len(ip) > 0 {
+		hostname = ip
+		sni = host
+		hostHdr = host
+		if port != "80" && port != "443" {
+			hostHdr += ":" + port
+		}
+	} else {
+		hostname = host
+		sni = host
+	}
+
+	url = fmt.Sprintf("http://%s:%s", hostname, port)
+	urls = fmt.Sprintf("https://%s:%s", hostname, port)
+	client := s.newClient(sni)
+
+	if isListening(client, s.userAgent, urls, hostHdr) {
+		return true, nil
+	} else if isListening(client, s.userAgent, url, hostHdr) {
+		return false, nil
+	}
+	return false, errRequestError
 }
 
 func (s *Scanner) newClient(sni string) *http.Client {
@@ -57,34 +85,6 @@ func (s *Scanner) newClient(sni string) *http.Client {
 		},
 	}
 	return client
-}
-
-func (s *Scanner) Scan(ip, host, port string) (bool, error) {
-	var url, urls string
-	var hostname, hostHdr, sni string
-
-	if len(ip) > 0 {
-		hostname = ip
-		sni = host
-		hostHdr = host
-		if port != "80" && port != "443" {
-			hostHdr += ":" + port
-		}
-	} else {
-		hostname = host
-		sni = host
-	}
-
-	url = fmt.Sprintf("http://%s:%s", hostname, port)
-	urls = fmt.Sprintf("https://%s:%s", hostname, port)
-	client := s.newClient(sni)
-
-	if isListening(client, s.userAgent, urls, hostHdr) {
-		return true, nil
-	} else if isListening(client, s.userAgent, url, hostHdr) {
-		return false, nil
-	}
-	return false, errRequestError
 }
 
 func isListening(client *http.Client, ua, url, hostHdr string) bool {
