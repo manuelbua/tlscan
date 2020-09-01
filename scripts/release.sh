@@ -8,9 +8,11 @@ outbin="${basepath}/../bin/tlscan"
 
 go build -o "${outbin}" -ldflags="$(${ldflags_sh} "${version_pkg}")" "${main_go}"
 GOOS=linux GOARCH=amd64 go build -o "${outbin}_linux64" -ldflags="$(${ldflags_sh} "${version_pkg}")" "${main_go}"
+GOOS=windows GOARCH=amd64 go build -o "${outbin}_win64" -ldflags="$(${ldflags_sh} "${version_pkg}")" "${main_go}"
 
-#upx --brute "${outbin}"
-#upx --brute "${outbin}_linux64"
+upx --brute "${outbin}" &
+upx --brute "${outbin}_linux64" &
+upx --brute "${outbin}_win64"
 
 "${outbin}" -v
 
