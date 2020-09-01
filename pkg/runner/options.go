@@ -28,13 +28,13 @@ func ParseOptions() *Options {
 	options := &Options{}
 
 	flag.StringVar(&options.Target, "t", "", "Specify a single target (stdin has precedence)")
-	flag.StringVar(&options.TargetList, "tL", "", "Specify a file with a list of targets, one per line (stdin has precedence)")
+	flag.StringVar(&options.TargetList, "tl", "", "Specify a file with a list of targets, one per line (stdin has precedence)")
 	flag.StringVar(&options.UserAgent, "ua", "tlscan (https://github.com/manuelbua/tlscan)", "Specify a custom User-Agent")
 	flag.Float64Var(&options.Timeout, "timeout", 10, "Seconds to wait for the handshake to complete")
-	flag.IntVar(&options.Threads, "c", 20, "Number of concurrent connection to make")
+	flag.IntVar(&options.Threads, "c", 20, "Number of concurrent connections to make")
 	flag.BoolVar(&options.OnlyTls, "https", false, "Output only TLS-enabled servers")
 	flag.BoolVar(&options.OnlyPlain, "http", false, "Output only non-TLS-enabled servers")
-	flag.BoolVar(&options.NoColor, "nC", false, "Do not colorize output")
+	flag.BoolVar(&options.NoColor, "nc", false, "Do not colorize output")
 	flag.BoolVar(&options.NoProgressBar, "nobar", false, "Do not use a progressbar")
 	flag.BoolVar(&options.ShowVersion, "v", false, "Shows version and exit")
 
